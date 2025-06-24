@@ -69,7 +69,7 @@ example = {
 
 model = "/path/to/Polaris-4B-Preview"
 
-tokenzier = AutoTokenizer.from_pretrained(model)
+tokenizer = AutoTokenizer.from_pretrained(model)
 
 llm = LLM(
     model=model,
@@ -116,7 +116,7 @@ python get_optimal_temperature.py  --start 0.6 --end 1.5 --step 0.1 --model /pat
 ```
 
 ### Step3: Multi-stage Training
-The training scripts for Polaris that details are avaliable [here]()
+The training scripts for Polaris that details are available [here]()
 The training process for Polaris-4B-preview requires at least 4 nodes. 
 Our multi-node training is based on Ray. Please run the command on **all nodes**.
 
@@ -169,7 +169,7 @@ Example inference
 
 
 ## Acknowledgements
-The training and evaluation codebase is heavily built on [Verl](https://github.com/volcengine/verl). The reward function in polaris in from [DeepScaleR](https://github.com/agentica-project/rllm). Our model is trained on top of [`Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B) and [`DeepSeek-R1-Distill-Qwen-7B`](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B). Thanks for their wonderful work.
+The training and evaluation codebase is heavily built on [Verl](https://github.com/volcengine/verl). The reward function in polaris is from [DeepScaleR](https://github.com/agentica-project/rllm). Our model is trained on top of [`Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B) and [`DeepSeek-R1-Distill-Qwen-7B`](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B). Thanks for their wonderful work.
 
 
 ## Citation
