@@ -587,8 +587,8 @@ class RayPPOTrainer:
         for test_data in self.val_dataloader:
             test_batch = DataProto.from_single_dict(test_data)
 
-            # repeat test batch (interleave=False for load balancing)
-            test_batch = test_batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.val_kwargs.n, interleave=False)
+            # repeat test batch
+            test_batch = test_batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.val_kwargs.n, interleave=True)
 
             # we only do validation on rule-based rm
             if self.config.reward_model.enable and test_batch[0].non_tensor_batch["reward_model"]["style"] == "model":
@@ -598,6 +598,7 @@ class RayPPOTrainer:
             input_ids = test_batch.batch["input_ids"]
             # TODO: Can we keep special tokens except for padding tokens?
             input_texts = [self.tokenizer.decode(ids, skip_special_tokens=True) for ids in input_ids]
+            sample_inputs.extend(input_texts)
 
             batch_keys_to_pop = ["input_ids", "attention_mask", "position_ids"]
             non_tensor_batch_keys_to_pop = ["raw_prompt_ids"]
@@ -633,15 +634,6 @@ class RayPPOTrainer:
             # unpad
             test_output_gen_batch = unpad_dataproto(test_output_gen_batch_padded, pad_size=pad_size)
             print("validation generation end")
-
-            # reorder back (since interleave is False)
-            indices = torch.arange(len(test_output_gen_batch)).reshape(self.config.actor_rollout_ref.rollout.val_kwargs.n, -1).T.reshape(-1)
-            test_batch.reorder(indices)
-            test_output_gen_batch.reorder(indices)
-
-            # The order for sample inputs, sample outputs, and sample scores should be the same as the order of test_batch (after reordering)
-            sample_inputs.extend([input_texts[i] for i in indices])
-            # print("Reordered gen_batch_output at test with indices:", indices)
 
             # Store generated outputs
             output_ids = test_output_gen_batch.batch["responses"]
@@ -937,9 +929,6 @@ class RayPPOTrainer:
                     batch_keys=batch_keys_to_pop,
                     non_tensor_batch_keys=non_tensor_batch_keys_to_pop,
                 )
-
-                # repeat training batch (interleave=False for load balancing)
-                gen_batch = gen_batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.n, interleave=False)
                 is_last_step = self.global_steps >= self.total_training_steps
 
                 with _timer("step", timing_raw):
@@ -954,14 +943,7 @@ class RayPPOTrainer:
                             gen_batch_output = self.async_rollout_manager.generate_sequences(gen_batch)
                             self.async_rollout_manager.sleep()
 
-                        indices = torch.arange(len(gen_batch_output)).reshape(self.config.actor_rollout_ref.rollout.n, -1).T.reshape(-1)
-                        # gen_batch is not reordered but it's not used anymore
-                        del gen_batch
-                        gen_batch_output.reorder(indices)
-                        # print("Reordered gen_batch_output at train with indices:", indices)
-
                     if self.config.algorithm.adv_estimator == AdvantageEstimator.REMAX:
-                        raise NotImplementedError("REMAX is not implemented with interleave=False yet")
                         with _timer("gen_max", timing_raw):
                             gen_baseline_batch = deepcopy(gen_batch)
                             gen_baseline_batch.meta_info["do_sample"] = False

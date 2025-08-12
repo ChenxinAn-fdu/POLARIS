@@ -307,9 +307,6 @@ class SGLangRollout(BaseRollout):
                 n=1,  # if validate, already repeat in ray_trainer
             )
 
-        # Already repeated in ray_trainer
-        kwargs["n"] = 1
-
         # users can customize different sampling_params at different run
         with self.update_sampling_params(**kwargs):
             print(f"{self.sampling_params=}")

@@ -272,9 +272,6 @@ class vLLMRollout(BaseRollout):
                 "temperature": self.config.val_kwargs.temperature,
                 "n": 1,  # if validate, already repeat in ray_trainer
             }
-
-        # Already repeated in ray_trainer
-        kwargs["n"] = 1
         kwargs["min_p"] = self.config.min_p
         lora_requests = None
         if self.lora_kwargs:
